@@ -2,12 +2,12 @@
 // @id             iitc-plugin-drawstore
 // @name           IITC plugin: DrawStore
 // @category       Info
-// @version        0.0.1.20160407.002
+// @version        0.0.1.20160407.003
 // @namespace      https://github.com/jonatkins/ingress-intel-total-conversion
 // @updateURL      https://github.com/Hurqalia/drawstore/raw/master/drawstore.meta.js
 // @downloadURL    https://github.com/Hurqalia/drawstore/raw/master/drawstore.user.js
 // @installURL     https://github.com/Hurqalia/drawstore/raw/master/drawstore.user.js
-// @description    [hurqalia22-2016-04-07-000002] DrawStore
+// @description    [hurqalia22-2016-04-07-000003] DrawStore
 // @include        https://www.ingress.com/intel*
 // @include        http://www.ingress.com/intel*
 // @match          https://www.ingress.com/intel*
@@ -18,7 +18,7 @@
 function wrapper(plugin_info) {
 	if(typeof window.plugin !== 'function') window.plugin = function() {};
 	plugin_info.buildName = 'hurqalia22';
-	plugin_info.dateTimeVersion = '20160407.002';
+	plugin_info.dateTimeVersion = '20160407.003';
 	plugin_info.pluginId = 'drawstore';
 
 	// PLUGIN START ////////////////////////////////////////////////////////
@@ -72,10 +72,17 @@ function wrapper(plugin_info) {
 		window.plugin.drawTools.load();
 	};
 
+	window.plugin.drawstore.resetDraw = function() {
+		delete localStorage['plugin-draw-tools-layer'];
+		window.plugin.drawTools.drawnItems.clearLayers();
+		window.plugin.drawTools.load();
+		runHooks('pluginDrawTools', {event: 'clear'});
+	};
 	// remove draw from store
 	window.plugin.drawstore.removeDraw = function() {
 		var draw_name = $('#changeDrawButton').val();
 		if ($.trim(draw_name) === '') {
+			window.plugin.drawstore.resetDraw();
 			return false;
 		}
 		if (typeof window.plugin.drawstore.storage[draw_name] === 'undefined') {
@@ -86,6 +93,7 @@ function wrapper(plugin_info) {
 		delete window.plugin.drawstore.storage[draw_name];
 		window.plugin.drawstore.saveStorage();
 		window.plugin.drawstore.refreshMenu();
+		window.plugin.drawstore.resetDraw();
 	};
 
 	// save draw to store
@@ -160,7 +168,8 @@ function wrapper(plugin_info) {
 		$('#drawstore-toolbox')
 			.append(' <strong>Draws : </strong><select onchange="window.plugin.drawstore.selectStoredDraw()" id="changeDrawButton" title="Change Draw"></select><br />')
 			.append(' <a onclick="window.plugin.drawstore.saveDraw()">Save</a>&nbsp;&nbsp;')
-			.append(' <a onclick="window.plugin.drawstore.removeDraw()">Delete</a>&nbsp;&nbsp;');
+			.append(' <a onclick="window.plugin.drawstore.removeDraw()">Delete</a>&nbsp;&nbsp;')
+			.append(' <a onclick="window.plugin.drawstore.resetDraw()">Clear Draw</a>');
 		window.plugin.drawstore.refreshMenu();
 	};
 
