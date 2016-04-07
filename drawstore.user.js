@@ -136,6 +136,7 @@ function wrapper(plugin_info) {
 		window.plugin.drawstore.loadStorage();
 		if (Object.keys(window.plugin.drawstore.storage).length) {
 			$('#changeDrawButton').find('option').remove();
+			$('#changeDrawButton').append($('<option>', { value : '', text : 'Select a Draw' }));
 			$.each(window.plugin.drawstore.storage, function(k, r) {
 				$('#changeDrawButton').append($('<option>', { value : k, text : k }));      
 			});
