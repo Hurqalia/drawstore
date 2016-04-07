@@ -2,12 +2,12 @@
 // @id             iitc-plugin-drawstore
 // @name           IITC plugin: DrawStore
 // @category       Info
-// @version        0.0.1.20160407.003
+// @version        0.0.1.20160407.004
 // @namespace      https://github.com/jonatkins/ingress-intel-total-conversion
 // @updateURL      https://github.com/Hurqalia/drawstore/raw/master/drawstore.meta.js
 // @downloadURL    https://github.com/Hurqalia/drawstore/raw/master/drawstore.user.js
 // @installURL     https://github.com/Hurqalia/drawstore/raw/master/drawstore.user.js
-// @description    [hurqalia22-2016-04-07-000003] DrawStore
+// @description    [hurqalia22-2016-04-07-000004] DrawStore
 // @include        https://www.ingress.com/intel*
 // @include        http://www.ingress.com/intel*
 // @match          https://www.ingress.com/intel*
@@ -18,7 +18,7 @@
 function wrapper(plugin_info) {
 	if(typeof window.plugin !== 'function') window.plugin = function() {};
 	plugin_info.buildName = 'hurqalia22';
-	plugin_info.dateTimeVersion = '20160407.003';
+	plugin_info.dateTimeVersion = '20160407.004';
 	plugin_info.pluginId = 'drawstore';
 
 	// PLUGIN START ////////////////////////////////////////////////////////
@@ -142,9 +142,9 @@ function wrapper(plugin_info) {
 	// populate select menu
 	window.plugin.drawstore.refreshMenu = function() {
 		window.plugin.drawstore.loadStorage();
+		$('#changeDrawButton').find('option').remove();
+		$('#changeDrawButton').append($('<option>', { value : '', text : 'Select a Draw' }));
 		if (Object.keys(window.plugin.drawstore.storage).length) {
-			$('#changeDrawButton').find('option').remove();
-			$('#changeDrawButton').append($('<option>', { value : '', text : 'Select a Draw' }));
 			$.each(window.plugin.drawstore.storage, function(k, r) {
 				$('#changeDrawButton').append($('<option>', { value : k, text : k }));      
 			});
