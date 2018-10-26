@@ -2,27 +2,27 @@
 // @id             iitc-plugin-drawstore
 // @name           IITC plugin: DrawStore
 // @category       Info
-// @version        0.1.2.20160407.004
+// @version        0.1.3.20181026.1640
 // @namespace      https://github.com/jonatkins/ingress-intel-total-conversion
-// @updateURL      https://github.com/Hurqalia/drawstore/raw/master/drawstore.meta.js
-// @downloadURL    https://github.com/Hurqalia/drawstore/raw/master/drawstore.user.js
-// @installURL     https://github.com/Hurqalia/drawstore/raw/master/drawstore.user.js
-// @description    [hurqalia22-2016-04-07-000004] DrawStore
+// @updateURL      https://cdn.rawgit.com/Hurqalia/drawstore/master/drawstore.meta.js
+// @downloadURL    https://cdn.rawgit.com/Hurqalia/drawstore/master/drawstore.user.js
+// @description    [2018-10-26-1640] DrawStore
+// @include        https://ingress.com/intel*
+// @include        http://ingress.com/intel*
 // @include        https://*.ingress.com/intel*
 // @include        http://*.ingress.com/intel*
 // @match          https://*.ingress.com/intel*
 // @match          http://*.ingress.com/intel*
-// @include        https://*.ingress.com/mission/*
-// @include        http://*.ingress.com/mission/*
-// @match          https://*.ingress.com/mission/*
-// @match          http://*.ingress.com/mission/*
 // @grant          none
 // ==/UserScript==
+/*
+	0.1.3	Added Opt menu with Import/Export buttons
+*/
 
 function wrapper(plugin_info) {
 	if(typeof window.plugin !== 'function') window.plugin = function() {};
 	plugin_info.buildName = 'hurqalia22';
-	plugin_info.dateTimeVersion = '20160407.004';
+	plugin_info.dateTimeVersion = '20181026.1640';
 	plugin_info.pluginId = 'drawstore';
 
 	// PLUGIN START ////////////////////////////////////////////////////////
@@ -32,6 +32,12 @@ function wrapper(plugin_info) {
 	window.plugin.drawstore.KEY_STORAGE = 'drawstore-storage';
 	window.plugin.drawstore.storage     = {};
 	window.plugin.drawstore.datas_draw  = '';
+	window.plugin.drawstore.isAndroid = function() {
+		if(typeof android !== 'undefined' && android) {
+			return true;
+		}
+		return false;
+	}
 
 	// update the localStorage datas
 	window.plugin.drawstore.saveStorage = function() {
@@ -154,7 +160,90 @@ function wrapper(plugin_info) {
 			});
 		} 
 	};
+	
+	window.plugin.drawstore.optAlert = function(message) {
+		$('.ui-dialog-drwSet .ui-dialog-buttonset').prepend('<p class="drw-alert" style="float:left;margin-top:4px;">'+message+'</p>');
+		$('.drw-alert').delay(2500).fadeOut();
+	}
 
+	// open opt dialog
+	window.plugin.drawstore.openOpt = function() {
+		dialog({
+		  html: window.plugin.drawstore.htmlSetbox,
+		  dialogClass: 'ui-dialog-drwSet',
+		  title: 'Drawstore Options'
+		});
+
+    //window.runHooks('pluginBkmrksOpenOpt');
+	}
+	
+	// reset store
+	window.plugin.drawstore.optReset = function() {
+    var promptAction = confirm('All draw projects will be deleted. Are you sure?', '');
+    if(promptAction) {
+      delete localStorage[window.plugin.drawstore.KEY_STORAGE];
+	  window.plugin.drawstore.storage = {};
+	  window.plugin.drawstore.saveStorage();
+      window.plugin.drawstore.refreshMenu();
+      //window.runHooks('pluginBkmrksEdit', {"target": "all", "action": "reset"});
+      console.log('DRAWSTORE: reset all draws');
+      window.plugin.drawstore.optAlert('Successful. ');
+		}
+	}
+	// copy drawstore for export
+	window.plugin.drawstore.optCopy = function() {
+    if(typeof android !== 'undefined' && android && android.shareString) {
+      return android.shareString(localStorage[window.plugin.drawstore.KEY_STORAGE]);
+    } else {
+      dialog({
+        html: '<p><a onclick="$(\'.ui-dialog-drwSet-copy textarea\').select();">Select all</a> and press CTRL+C to copy it.</p>'+
+			'<textarea readonly>'+
+				localStorage[window.plugin.drawstore.KEY_STORAGE]+
+			'</textarea>',
+        dialogClass: 'ui-dialog-drwSet-copy',
+        title: 'Drawstore Export'
+			});
+		}
+	}
+	window.plugin.drawstore.optExport = function() {
+		if(typeof android !== 'undefined' && android && android.saveFile) {
+		  android.saveFile("IITC-drawstore.json", "application/json", localStorage[window.plugin.drawstore.KEY_STORAGE]);
+		}
+	}
+
+	// import drawstore via paste
+	window.plugin.drawstore.optPaste = function() {
+    var promptAction = prompt('Press CTRL+V to paste it.', '');
+    if(promptAction !== null && promptAction !== '') {
+      try {
+        JSON.parse(promptAction); // try to parse JSON first
+        localStorage[window.plugin.drawstore.KEY_STORAGE] = promptAction;
+		window.plugin.drawstore.refreshMenu();//we do refresh the dropdownlist
+        console.log('DRAWSTORE: reset and imported drawstore');
+        window.plugin.drawstore.optAlert('Successful. ');
+      } catch(e) {
+        console.warn('DRAWSTORE: failed to import data: '+e);
+        window.plugin.drawstore.optAlert('<span style="color: #f88">Import failed </span>');
+			}
+		}
+	}
+	
+	window.plugin.drawstore.optImport = function() {
+    if (window.requestFile === undefined) return;
+    window.requestFile(function(filename, content) {
+      try {
+        JSON.parse(content); // try to parse JSON first
+        localStorage[window.plugin.drawstore.KEY_STORAGE] = promptAction;
+		window.plugin.drawstore.refreshMenu();//we do refresh the dropdownlist
+        console.log('DRAWSTORE: reset and imported drawstore');
+        window.plugin.drawstore.optAlert('Successful. ');
+      } catch(e) {
+        console.warn('DRAWSTORE: failed to import data: '+e);
+        window.plugin.drawstore.optAlert('<span style="color: #f88">Import failed </span>');
+			}
+		});
+	}
+	
 	// init setup
 	window.plugin.drawstore.setup = function() {
 		if (!window.plugin.drawTools) {
@@ -162,18 +251,52 @@ function wrapper(plugin_info) {
 			alert('Drawtools plugin is required');
 			return;
 		}
+		window.plugin.drawstore.setupCSS();
 		window.plugin.drawstore.addPanel();
 		console.log('**** DrawStore : loaded ****');
 	};
-  
+	window.plugin.drawstore.setupCSS = function() {
+		$('<style>').prop('type', 'text/css').html('#drwstoreSetbox a{'+
+			'display:block;'+
+			'color:#ffce00;'+
+			'border:1px solid #ffce00;'+
+			'padding:3px 0;'+
+			'margin:10px auto;'+
+			'width:80%;'+
+			'text-align:center;'+
+			'background:rgba(8,48,78,.9);'+
+			'}'+
+			'#drwstoreSetbox a.disabled, #drwstoreSetbox a.disabled:hover{'+
+			'color:#666;'+
+			'border-color:#666;'+
+			'text-decoration:none;}'+
+			'#drwstoreSetbox{text-align:center;}'+
+			'.ui-dialog-drwSet-copy textarea{'+
+			'width:96%;'+
+			'height:120px;'+
+			'resize:vertical;}')
+			.appendTo('head');
+	}
 	// toolbox menu
 	window.plugin.drawstore.addPanel = function() {
+		var actions = '';
+		actions += '<a onclick="window.plugin.drawstore.optReset();return false;">Reset drawstore</a>';
+		actions += '<a onclick="window.plugin.drawstore.optCopy();return false;">Copy drawstore</a>';
+		actions += '<a onclick="window.plugin.drawstore.optPaste();return false;">Paste drawstore</a>';
+		
+		if(window.plugin.drawstore.isAndroid()) {
+		  actions += '<a onclick="window.plugin.drawstore.optImport();return false;">Import drawstore</a>';
+		  actions += '<a onclick="window.plugin.drawstore.optExport();return false;">Export drawstore</a>';
+		}
+		window.plugin.drawstore.htmlSetbox = '<div id="drwstoreSetbox">' + actions + '</div>';
+		
 		$('#toolbox').after('<div id="drawstore-toolbox" style="padding:3px;"></div>');
 		$('#drawstore-toolbox')
 			.append(' <strong>Draws : </strong><select onchange="window.plugin.drawstore.selectStoredDraw()" id="changeDrawButton" title="Change Draw"></select><br />')
 			.append(' <a onclick="window.plugin.drawstore.saveDraw()">Save</a>&nbsp;&nbsp;')
 			.append(' <a onclick="window.plugin.drawstore.removeDraw()">Delete</a>&nbsp;&nbsp;')
-			.append(' <a onclick="window.plugin.drawstore.resetDraw()">Clear Draw</a>');
+			.append(' <a onclick="window.plugin.drawstore.resetDraw()">Clear Draw</a>')
+			.append(' <a onclick="window.plugin.drawstore.openOpt()">Opt</a>');
 		window.plugin.drawstore.refreshMenu();
 	};
 
